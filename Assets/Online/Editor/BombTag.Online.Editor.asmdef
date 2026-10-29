@@ -2,7 +2,8 @@
   "name": "BombTag.Online.Editor",
   "references": [
     "BombTag.Online",
-    "Unity.Netcode.Runtime"
+    "Unity.Netcode.Runtime",
+    "Unity.AI.Navigation"
   ],
   "includePlatforms": [
     "Editor"

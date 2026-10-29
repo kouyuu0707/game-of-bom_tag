@@ -1,12 +1,14 @@
 using System.IO;
 using System.Linq;
 using BombTag.Online;
+using Unity.AI.Navigation;
 using Unity.Netcode;
 using Unity.Netcode.Components;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.AI;
 using UnityEngine.SceneManagement;
 
 namespace BombTag.OnlineEditor
@@ -16,6 +18,8 @@ namespace BombTag.OnlineEditor
         public const string ScenePath = "Assets/Online/Generated/OnlineTest.unity";
         private const string PrefabPath = "Assets/Online/Generated/OnlinePlayer.prefab";
         private const string BombPrefabPath = "Assets/Online/Generated/OnlineBomb.prefab";
+        private const string EnemyPrefabPath = "Assets/Online/Generated/OnlineEnemy.prefab";
+        private const string RoundPrefabPath = "Assets/Online/Generated/OnlineRound.prefab";
 
         [MenuItem("Tools/Bomb Tag/Create or Open Online Test")]
         public static void CreateOrOpen() => PrepareScene();
@@ -29,6 +33,8 @@ namespace BombTag.OnlineEditor
             Material playerMaterial = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/PlayerMaterial.mat");
             GameObject bombPrefab = EnsureBombPrefab(playerMaterial);
             GameObject prefab = EnsurePlayerPrefab(playerMaterial, bombPrefab);
+            GameObject enemyPrefab = EnsureEnemyPrefab(playerMaterial);
+            GameObject roundPrefab = EnsureRoundPrefab(enemyPrefab);
 
             Scene scene;
             OnlineSessionController controller;
@@ -75,6 +81,20 @@ namespace BombTag.OnlineEditor
                 controller = new GameObject("Online Connection").AddComponent<OnlineSessionController>();
             }
 
+            GameObject groundRoot = scene.GetRootGameObjects().FirstOrDefault(root => root.name == "Ground");
+            if (groundRoot == null)
+            {
+                Debug.LogError("OnlineTest needs its Ground object for navigation. Restore it before building.");
+                return false;
+            }
+            NavMeshSurface surface = groundRoot.GetComponent<NavMeshSurface>();
+            if (surface == null)
+            {
+                surface = groundRoot.AddComponent<NavMeshSurface>();
+                surface.collectObjects = CollectObjects.Children;
+                surface.useGeometry = NavMeshCollectGeometry.PhysicsColliders;
+            }
+
             SerializedObject serialized = new SerializedObject(controller);
             SerializedProperty playerReference = serialized.FindProperty("playerPrefab");
             if (playerReference.objectReferenceValue == null)
@@ -91,6 +111,8 @@ namespace BombTag.OnlineEditor
                 UpgradeInventory(customPath, bombPrefab);
             }
             serialized.FindProperty("bombPrefab").objectReferenceValue = bombPrefab;
+            serialized.FindProperty("enemyPrefab").objectReferenceValue = enemyPrefab;
+            serialized.FindProperty("roundPrefab").objectReferenceValue = roundPrefab;
             serialized.ApplyModifiedPropertiesWithoutUndo();
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene, ScenePath);
@@ -98,8 +120,58 @@ namespace BombTag.OnlineEditor
                 EditorBuildSettings.scenes = EditorBuildSettings.scenes
                     .Concat(new[] { new EditorBuildSettingsScene(ScenePath, true) }).ToArray();
             AssetDatabase.SaveAssets();
-            Debug.Log("Online test ready. Local Host / Local Join to connect; B places bombs, E detonates your bombs.");
+            Debug.Log("Co-op ready. Connect 2 players, then the host presses Start game. B places, E detonates.");
             return true;
+        }
+
+        private static GameObject EnsureEnemyPrefab(Material material)
+        {
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(EnemyPrefabPath);
+            if (prefab != null)
+                return prefab;
+            GameObject enemy = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            try
+            {
+                enemy.name = "OnlineEnemy";
+                enemy.GetComponent<CapsuleCollider>().isTrigger = true;
+                enemy.AddComponent<NetworkObject>();
+                enemy.AddComponent<NetworkTransform>();
+                NavMeshAgent agent = enemy.AddComponent<NavMeshAgent>();
+                agent.enabled = false;
+                agent.baseOffset = 1;
+                agent.speed = 3.5f;
+                agent.stoppingDistance = 0.9f;
+                enemy.AddComponent<OnlineEnemy>();
+                enemy.GetComponent<Renderer>().sharedMaterial = material;
+                return PrefabUtility.SaveAsPrefabAsset(enemy, EnemyPrefabPath);
+            }
+            finally { Object.DestroyImmediate(enemy); }
+        }
+
+        private static GameObject EnsureRoundPrefab(GameObject enemyPrefab)
+        {
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(RoundPrefabPath);
+            if (prefab == null)
+            {
+                GameObject round = new GameObject("OnlineRound");
+                try
+                {
+                    round.AddComponent<NetworkObject>();
+                    round.AddComponent<OnlineRound>();
+                    PrefabUtility.SaveAsPrefabAsset(round, RoundPrefabPath);
+                }
+                finally { Object.DestroyImmediate(round); }
+            }
+            GameObject root = PrefabUtility.LoadPrefabContents(RoundPrefabPath);
+            try
+            {
+                SerializedObject serialized = new SerializedObject(root.GetComponent<OnlineRound>());
+                serialized.FindProperty("enemyPrefab").objectReferenceValue = enemyPrefab.GetComponent<OnlineEnemy>();
+                if (serialized.ApplyModifiedPropertiesWithoutUndo())
+                    PrefabUtility.SaveAsPrefabAsset(root, RoundPrefabPath);
+            }
+            finally { PrefabUtility.UnloadPrefabContents(root); }
+            return AssetDatabase.LoadAssetAtPath<GameObject>(RoundPrefabPath);
         }
 
         private static GameObject EnsureBombPrefab(Material material)
@@ -153,6 +225,11 @@ namespace BombTag.OnlineEditor
                 bool added = inventory == null;
                 if (added)
                     inventory = root.AddComponent<OnlineBombInventory>();
+                if (root.GetComponent<OnlineHealth>() == null)
+                {
+                    root.AddComponent<OnlineHealth>();
+                    added = true;
+                }
                 SerializedObject serialized = new SerializedObject(inventory);
                 serialized.FindProperty("bombPrefab").objectReferenceValue = bombPrefab.GetComponent<OnlineBomb>();
                 bool changed = serialized.ApplyModifiedPropertiesWithoutUndo();

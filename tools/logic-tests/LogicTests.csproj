@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="NUnit" Version="3.14.0" />
+    <Compile Include="../../Assets/Online/Runtime/CombatRules.cs" Link="CombatRules.cs" />
+    <Compile Include="../../Assets/Online/Runtime/BombStock.cs" Link="BombStock.cs" />
+    <Compile Include="../../Assets/Online/Tests/Editor/CombatRulesTests.cs" Link="CombatRulesTests.cs" />
+    <Compile Include="../../Assets/Online/Tests/Editor/BombStockTests.cs" Link="BombStockTests.cs" />
+  </ItemGroup>
+</Project>
