@@ -1,0 +1,13 @@
+{
+  "name": "BombTag.Online.Tests",
+  "references": [
+    "BombTag.Online"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "autoReferenced": false,
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ]
+}

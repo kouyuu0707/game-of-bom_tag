@@ -1,0 +1,11 @@
+{
+  "name": "BombTag.Online.Editor",
+  "references": [
+    "BombTag.Online",
+    "Unity.Netcode.Runtime"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "autoReferenced": true
+}
