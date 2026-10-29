@@ -13,6 +13,8 @@ namespace BombTag.Online
     {
         [SerializeField] private GameObject playerPrefab;
         [SerializeField] private GameObject bombPrefab;
+        [SerializeField] private GameObject enemyPrefab;
+        [SerializeField] private GameObject roundPrefab;
         private readonly ConnectionSlots slots = new ConnectionSlots();
         private NetworkManager manager;
         private UnityTransport transport;
@@ -26,6 +28,7 @@ namespace BombTag.Online
         private float connectionDeadline;
         private bool stopping;
         private int attemptVersion;
+        private Vector2 menuScroll;
 
         private void Awake()
         {
@@ -47,20 +50,38 @@ namespace BombTag.Online
             manager.NetworkConfig.TickRate = 30;
             if (bombPrefab != null)
                 manager.AddNetworkPrefab(bombPrefab);
+            if (enemyPrefab != null)
+                manager.AddNetworkPrefab(enemyPrefab);
+            if (roundPrefab != null)
+                manager.AddNetworkPrefab(roundPrefab);
+            manager.OnServerStarted += SpawnRound;
             manager.ConnectionApprovalCallback = ApproveConnection;
             manager.OnClientConnectedCallback += Connected;
             manager.OnClientDisconnectCallback += Disconnected;
             manager.OnTransportFailure += TransportFailed;
-            if (playerPrefab == null || bombPrefab == null)
+            if (playerPrefab == null || bombPrefab == null || enemyPrefab == null || roundPrefab == null)
             {
                 status = "Update this scene using Tools / Bomb Tag / Create or Open Online Test.";
-                enabled = false;
             }
+        }
+
+        private void SpawnRound()
+        {
+            if (roundPrefab != null && OnlineRound.Instance == null)
+                Instantiate(roundPrefab).GetComponent<NetworkObject>().Spawn();
         }
 
         private void ApproveConnection(NetworkManager.ConnectionApprovalRequest request,
             NetworkManager.ConnectionApprovalResponse response)
         {
+            if (OnlineRound.Instance != null && OnlineRound.Instance.IsPlaying)
+            {
+                response.Approved = false;
+                response.CreatePlayerObject = false;
+                response.Reason = "A game is in progress. Join again after the round ends.";
+                response.Pending = false;
+                return;
+            }
             response.Approved = slots.TryReserve(request.ClientNetworkId, out Vector3 position);
             response.CreatePlayerObject = response.Approved;
             response.Position = position;
@@ -168,7 +189,8 @@ namespace BombTag.Online
         }
 
         private bool CanStart() => !disposed && !busy && !connecting && manager != null &&
-            !manager.IsListening && !manager.ShutdownInProgress && playerPrefab != null && bombPrefab != null;
+            !manager.IsListening && !manager.ShutdownInProgress && playerPrefab != null && bombPrefab != null &&
+            enemyPrefab != null && roundPrefab != null;
 
         private void StartLocal(bool host)
         {
@@ -220,10 +242,12 @@ namespace BombTag.Online
 
         private void OnGUI()
         {
-            GUILayout.BeginArea(new Rect(16, 16, 340, 380), GUI.skin.box);
-            GUILayout.Label("Bomb Tag - 2 player connection test");
+            GUILayout.BeginArea(new Rect(16, 16, Mathf.Max(100, Mathf.Min(400, Screen.width - 32)),
+                Mathf.Max(100, Mathf.Min(520, Screen.height - 32))), GUI.skin.box);
+            menuScroll = GUILayout.BeginScrollView(menuScroll);
+            GUILayout.Label("Bomb Tag - Co-op");
             GUILayout.Label("WASD: Move   B: Place   E: Detonate your bombs");
-            GUILayout.Label("Bomb placement test. AI and damage are not enabled yet.");
+            GUILayout.Label("Defeat all red enemies. Blasts also hurt your team!");
             GUILayout.Space(8);
             GUILayout.Label(status);
             bool running = manager != null && manager.IsListening;
@@ -258,12 +282,49 @@ namespace BombTag.Online
             {
                 GUILayout.Label($"Bombs: {inventory.Count}/{BombStock.Capacity}   Placed: {inventory.PlacedCount}");
                 if (inventory.Count == 0)
-                    GUILayout.Label("No bombs left. Reconnect to start with 2 again.");
+                    GUILayout.Label("No bombs left. Retry after this round to refill.");
+            }
+            OnlineRound round = OnlineRound.Instance;
+            if (round != null && round.IsSpawned)
+            {
+                GUILayout.Space(8);
+                foreach (OnlineHealth health in FindObjectsByType<OnlineHealth>(FindObjectsSortMode.None))
+                {
+                    if (health.IsSpawned)
+                        GUILayout.Label($"{(health.OwnerClientId == manager.LocalClientId ? "You" : "Friend")}: HP {health.Current}/{CombatRules.PlayerHealth}");
+                }
+                switch (round.Phase)
+                {
+                    case OnlineRoundPhase.Waiting:
+                        GUILayout.Label("Waiting for 2 players. Host starts the game.");
+                        break;
+                    case OnlineRoundPhase.Playing:
+                        GUILayout.Label($"Enemies remaining: {round.EnemiesRemaining}");
+                        break;
+                    case OnlineRoundPhase.Victory:
+                        GUILayout.Label("Game Clear!");
+                        break;
+                    case OnlineRoundPhase.Defeat:
+                        GUILayout.Label("Game Over");
+                        break;
+                }
+                if (manager.IsHost && !round.IsPlaying)
+                {
+                    GUI.enabled = !busy && manager.ConnectedClientsIds.Count >= ConnectionRules.MaxPlayers;
+                    if (GUILayout.Button(round.Phase == OnlineRoundPhase.Waiting ? "Start game" : "Retry"))
+                        round.StartRoundOnServer();
+                    GUI.enabled = true;
+                    if (!string.IsNullOrEmpty(round.StartError))
+                        GUILayout.Label(round.StartError);
+                }
+                else if (!manager.IsHost && !round.IsPlaying)
+                    GUILayout.Label("Waiting for the host to start / retry.");
             }
             GUI.enabled = !busy && (running || session != null || connecting);
             if (GUILayout.Button("Disconnect"))
                 StopConnection("Disconnected. You can start another room.");
             GUI.enabled = true;
+            GUILayout.EndScrollView();
             GUILayout.EndArea();
         }
 
@@ -272,6 +333,7 @@ namespace BombTag.Online
             disposed = true;
             if (manager != null)
             {
+                manager.OnServerStarted -= SpawnRound;
                 manager.OnClientConnectedCallback -= Connected;
                 manager.OnClientDisconnectCallback -= Disconnected;
                 manager.OnTransportFailure -= TransportFailed;

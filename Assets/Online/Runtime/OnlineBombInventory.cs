@@ -12,6 +12,7 @@ namespace BombTag.Online
         private readonly NetworkVariable<int> placedCount = new NetworkVariable<int>(0);
         private readonly List<OnlineBomb> placedBombs = new List<OnlineBomb>();
         private BombStock stock = new BombStock();
+        private bool CanAct => TryGetComponent(out OnlinePlayer player) && player.CanAct;
         public int Count => bombCount.Value;
         public int PlacedCount => placedCount.Value;
 
@@ -41,7 +42,7 @@ namespace BombTag.Online
         private void PlaceServerRpc()
         {
             // NGO restricts this RPC to this player's owner. Never accept a position from the client.
-            if (bombPrefab == null || !stock.TrySpend())
+            if (!CanAct || bombPrefab == null || !stock.TrySpend())
                 return;
 
             Vector3 position = transform.position + new Vector3(0, -0.7f, 0);
@@ -57,6 +58,8 @@ namespace BombTag.Online
         [ServerRpc]
         private void DetonateServerRpc()
         {
+            if (!CanAct)
+                return;
             OnlineBomb[] bombs = placedBombs.ToArray();
             placedBombs.Clear();
             placedCount.Value = 0;
@@ -65,6 +68,7 @@ namespace BombTag.Online
                 if (bomb == null || !bomb.IsSpawned || bomb.OwnerClientId != OwnerClientId)
                     continue;
 
+                ApplyBlastOnServer(bomb.transform.position);
                 // Send the effect from the persistent player object, not the bomb about to despawn.
                 ShowDetonationClientRpc(bomb.transform.position);
                 bomb.NetworkObject.Despawn();
@@ -72,10 +76,48 @@ namespace BombTag.Online
             // Detonation does not replenish stock. Pickup synchronization is a later step.
         }
 
+        public void ResetOnServer()
+        {
+            if (!IsSpawned || !IsServer)
+                return;
+            foreach (OnlineBomb bomb in placedBombs)
+            {
+                if (bomb != null && bomb.IsSpawned)
+                    bomb.NetworkObject.Despawn();
+            }
+            placedBombs.Clear();
+            stock = new BombStock();
+            bombCount.Value = stock.Count;
+            placedCount.Value = 0;
+        }
+
+        private void ApplyBlastOnServer(Vector3 position)
+        {
+            Physics.SyncTransforms();
+            Collider[] hits = Physics.OverlapSphere(position, CombatRules.BlastRadius,
+                Physics.AllLayers, QueryTriggerInteraction.Collide);
+            var players = new HashSet<OnlineHealth>();
+            var enemies = new HashSet<OnlineEnemy>();
+            foreach (Collider hit in hits)
+            {
+                OnlineHealth player = hit.GetComponentInParent<OnlineHealth>();
+                OnlineEnemy enemy = hit.GetComponentInParent<OnlineEnemy>();
+                if (player != null)
+                    players.Add(player);
+                if (enemy != null)
+                    enemies.Add(enemy);
+            }
+            // Includes the planter and teammates. Each actor is hit once per explosion.
+            foreach (OnlineHealth player in players)
+                player.TakeDamageOnServer(1);
+            foreach (OnlineEnemy enemy in enemies)
+                enemy.DefeatOnServer();
+        }
+
         // For future host-authoritative pickups. Clients cannot refill their own stock.
         public bool TryCollectOnServer()
         {
-            if (!IsSpawned || !IsServer || !stock.TryCollect())
+            if (!IsSpawned || !IsServer || !CanAct || !stock.TryCollect())
                 return false;
             bombCount.Value = stock.Count;
             return true;
@@ -98,7 +140,7 @@ namespace BombTag.Online
             for (int i = 0; i < ring.positionCount; i++)
             {
                 float angle = i * Mathf.PI * 2f / ring.positionCount;
-                ring.SetPosition(i, position + new Vector3(Mathf.Cos(angle) * 3f, 0.1f, Mathf.Sin(angle) * 3f));
+                ring.SetPosition(i, position + new Vector3(Mathf.Cos(angle) * CombatRules.BlastRadius, 0.1f, Mathf.Sin(angle) * CombatRules.BlastRadius));
             }
             Destroy(effect, 0.35f);
         }
