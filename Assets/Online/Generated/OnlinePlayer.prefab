@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 4085276006927918704}
   - component: {fileID: 425303868527117042}
   - component: {fileID: 4839252445133535878}
+  - component: {fileID: 5165449878040580244}
   m_Layer: 0
   m_Name: OnlinePlayer
   m_TagString: Untagged
@@ -204,3 +205,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: BombTag.Online::BombTag.Online.OnlinePlayer
   ShowTopMostFoldoutHeaderGroup: 1
   moveSpeed: 5
+--- !u!114 &5165449878040580244
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5013389603189188295}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e42e85c6d6d740a887a9e2f54c14d81e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BombTag.Online::BombTag.Online.OnlineBombInventory
+  ShowTopMostFoldoutHeaderGroup: 1
+  bombPrefab: {fileID: 7409502006590568035, guid: d0777c1b0e90edd4ca7df2d17246e7a9, type: 3}

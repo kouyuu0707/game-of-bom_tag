@@ -149,6 +149,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: BombTag.Online::BombTag.Online.OnlineSessionController
   playerPrefab: {fileID: 5013389603189188295, guid: 78496e42ea572cf44a18d78fd984ac48, type: 3}
+  bombPrefab: {fileID: 8418782294868559945, guid: d0777c1b0e90edd4ca7df2d17246e7a9, type: 3}
 --- !u!4 &699955010
 Transform:
   m_ObjectHideFlags: 0
