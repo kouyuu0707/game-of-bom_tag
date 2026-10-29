@@ -19,9 +19,12 @@ namespace BombTag.Online
         private readonly ConnectionSlots slots = new ConnectionSlots();
         private NetworkManager manager;
         private UnityTransport transport;
+        private SinglePlayerTransport singlePlayerTransport;
+        private GameMode mode = GameMode.Cooperative;
+        private bool autoStartSinglePlayer;
         private ISession session;
         private string code = "";
-        private string status = "Choose Host or Join. WASD: move / B: place / E: detonate.";
+        private string status = "Choose Single Player, or host / join a co-op room.";
         private bool busy;
         private bool disposed;
         private bool localOptions;
@@ -42,6 +45,7 @@ namespace BombTag.Online
             }
             // Kept on this scene object so stopping Play Mode removes all networking state.
             transport = gameObject.AddComponent<UnityTransport>();
+            singlePlayerTransport = gameObject.AddComponent<SinglePlayerTransport>();
             manager = gameObject.AddComponent<NetworkManager>();
             manager.NetworkConfig ??= new NetworkConfig();
             manager.NetworkConfig.NetworkTransport = transport;
@@ -49,6 +53,7 @@ namespace BombTag.Online
             manager.NetworkConfig.EnableSceneManagement = false;
             manager.NetworkConfig.ConnectionApproval = true;
             manager.NetworkConfig.TickRate = 30;
+            manager.NetworkConfig.ProtocolVersion = ConnectionRules.ProtocolVersion;
             if (bombPrefab != null)
                 manager.AddNetworkPrefab(bombPrefab);
             if (enemyPrefab != null)
@@ -71,12 +76,24 @@ namespace BombTag.Online
         private void SpawnRound()
         {
             if (roundPrefab != null && OnlineRound.Instance == null)
-                Instantiate(roundPrefab).GetComponent<NetworkObject>().Spawn();
+            {
+                OnlineRound round = Instantiate(roundPrefab).GetComponent<OnlineRound>();
+                round.NetworkObject.Spawn();
+                round.SetModeOnServer(mode);
+            }
         }
 
         private void ApproveConnection(NetworkManager.ConnectionApprovalRequest request,
             NetworkManager.ConnectionApprovalResponse response)
         {
+            if (!GameModeRules.CanJoin(mode, request.ClientNetworkId == Unity.Netcode.NetworkManager.ServerClientId))
+            {
+                response.Approved = false;
+                response.CreatePlayerObject = false;
+                response.Reason = "Single-player games do not accept other players.";
+                response.Pending = false;
+                return;
+            }
             if (OnlineRound.Instance != null && OnlineRound.Instance.IsPlaying)
             {
                 response.Approved = false;
@@ -97,7 +114,8 @@ namespace BombTag.Online
         {
             if (clientId == manager.LocalClientId)
                 connecting = false;
-            status = manager.IsHost ? "Hosting. Waiting for / connected to your friend." : "Connected to host.";
+            status = mode == GameMode.SinglePlayer ? "Single player. Defeat all red enemies!" :
+                manager.IsHost ? "Hosting. Waiting for / connected to your friend." : "Connected to host.";
         }
 
         private void Disconnected(ulong clientId)
@@ -120,6 +138,12 @@ namespace BombTag.Online
 
         private void Update()
         {
+            if (autoStartSinglePlayer && manager != null && manager.IsConnectedClient &&
+                manager.LocalClient.PlayerObject != null && OnlineRound.Instance != null && OnlineRound.Instance.IsSpawned)
+            {
+                autoStartSinglePlayer = false;
+                OnlineRound.Instance.StartRoundOnServer();
+            }
             if (connecting && Time.unscaledTime > connectionDeadline)
                 StopConnection("Connection timed out. Check that the host is running, then retry.");
         }
@@ -149,6 +173,9 @@ namespace BombTag.Online
                 status = "Enter the host's join code.";
                 return;
             }
+            mode = GameMode.Cooperative;
+            autoStartSinglePlayer = false;
+            manager.NetworkConfig.NetworkTransport = transport;
             busy = true;
             int attempt = ++attemptVersion;
             slots.Clear();
@@ -195,11 +222,38 @@ namespace BombTag.Online
             !manager.IsListening && !manager.ShutdownInProgress && playerPrefab != null && bombPrefab != null &&
             enemyPrefab != null && roundPrefab != null && pickupPrefab != null;
 
+        private void StartSinglePlayer()
+        {
+            if (!CanStart())
+                return;
+            slots.Clear();
+            mode = GameMode.SinglePlayer;
+            autoStartSinglePlayer = true;
+            manager.NetworkConfig.NetworkTransport = singlePlayerTransport;
+            try
+            {
+                if (!manager.StartHost())
+                    throw new InvalidOperationException("Could not start single player.");
+                status = "Single player. Defeat all red enemies!";
+            }
+            catch (Exception exception)
+            {
+                autoStartSinglePlayer = false;
+                manager.Shutdown();
+                slots.Clear();
+                mode = GameMode.Cooperative;
+                status = exception.Message;
+            }
+        }
+
         private void StartLocal(bool host)
         {
             if (!CanStart())
                 return;
             slots.Clear();
+            mode = GameMode.Cooperative;
+            autoStartSinglePlayer = false;
+            manager.NetworkConfig.NetworkTransport = transport;
             // Explicitly loopback only. Local testing does not expose a public server.
             transport.SetConnectionData("127.0.0.1", ConnectionRules.Port, "127.0.0.1");
             bool started = host ? manager.StartHost() : manager.StartClient();
@@ -213,6 +267,7 @@ namespace BombTag.Online
             if (stopping || disposed)
                 return;
             stopping = true;
+            autoStartSinglePlayer = false;
             attemptVersion++;
             busy = true;
             connecting = false;
@@ -236,6 +291,7 @@ namespace BombTag.Online
                 if (!disposed)
                 {
                     code = "";
+                    mode = GameMode.Cooperative;
                     status = message;
                     busy = false;
                     stopping = false;
@@ -248,15 +304,20 @@ namespace BombTag.Online
             GUILayout.BeginArea(new Rect(16, 16, Mathf.Max(100, Mathf.Min(400, Screen.width - 32)),
                 Mathf.Max(100, Mathf.Min(520, Screen.height - 32))), GUI.skin.box);
             menuScroll = GUILayout.BeginScrollView(menuScroll);
-            GUILayout.Label("Bomb Tag - Co-op");
+            GUILayout.Label("Bomb Tag");
             GUILayout.Label("WASD: Move   B: Place   E: Detonate your bombs");
-            GUILayout.Label("Defeat all red enemies. Blasts also hurt your team!");
+            GUILayout.Label(mode == GameMode.SinglePlayer
+                ? "Defeat all red enemies. Your blasts also hurt you!"
+                : "Defeat all red enemies. Blasts also hurt your team!");
             GUILayout.Space(8);
             GUILayout.Label(status);
             bool running = manager != null && manager.IsListening;
             GUI.enabled = CanStart();
             if (!running)
             {
+                if (GUILayout.Button("Single Player"))
+                    StartSinglePlayer();
+                GUILayout.Space(8);
                 if (GUILayout.Button("Host online room"))
                     StartOnline(true);
                 code = GUILayout.TextField(code, 12);
@@ -279,7 +340,8 @@ namespace BombTag.Online
                     GUIUtility.systemCopyBuffer = code;
             }
             if (running && manager.IsServer)
-                GUILayout.Label("Players: " + manager.ConnectedClientsIds.Count + "/2");
+                GUILayout.Label(mode == GameMode.SinglePlayer ? "Mode: Single Player" :
+                    "Players: " + manager.ConnectedClientsIds.Count + "/2");
             if (manager != null && manager.IsConnectedClient && manager.LocalClient.PlayerObject != null &&
                 manager.LocalClient.PlayerObject.TryGetComponent(out OnlineBombInventory inventory))
             {
@@ -299,7 +361,8 @@ namespace BombTag.Online
                 switch (round.Phase)
                 {
                     case OnlineRoundPhase.Waiting:
-                        GUILayout.Label("Waiting for 2 players. Host starts the game.");
+                        GUILayout.Label(round.Mode == GameMode.SinglePlayer ? "Ready for single player." :
+                            "Waiting for 2 players. Host starts the game.");
                         break;
                     case OnlineRoundPhase.Playing:
                         GUILayout.Label($"Enemies remaining: {round.EnemiesRemaining}");
@@ -314,7 +377,7 @@ namespace BombTag.Online
                 }
                 if (manager.IsHost && !round.IsPlaying)
                 {
-                    GUI.enabled = !busy && manager.ConnectedClientsIds.Count >= ConnectionRules.MaxPlayers;
+                    GUI.enabled = !busy && round.CanStartWithPlayers(manager.ConnectedClientsIds.Count);
                     if (GUILayout.Button(round.Phase == OnlineRoundPhase.Waiting ? "Start game" : "Retry"))
                         round.StartRoundOnServer();
                     GUI.enabled = true;
@@ -325,8 +388,8 @@ namespace BombTag.Online
                     GUILayout.Label("Waiting for the host to start / retry.");
             }
             GUI.enabled = !busy && (running || session != null || connecting);
-            if (GUILayout.Button("Disconnect"))
-                StopConnection("Disconnected. You can start another room.");
+            if (GUILayout.Button(mode == GameMode.SinglePlayer ? "Back to menu" : "Disconnect"))
+                StopConnection("Choose Single Player, or host / join a co-op room.");
             GUI.enabled = true;
             GUILayout.EndScrollView();
             GUILayout.EndArea();
