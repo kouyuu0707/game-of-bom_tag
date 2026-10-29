@@ -72,6 +72,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: BombTag.Online::BombTag.Online.OnlineRound
   ShowTopMostFoldoutHeaderGroup: 1
   enemyPrefab: {fileID: 2997195651875230896, guid: cae5080f970cfd849b6263ed6a6eca9e, type: 3}
+  pickupPrefab: {fileID: 2591163077068045723, guid: e54189d9b4b137d4baaf4abf946cbd99, type: 3}
+  pickupPositions:
+  - {x: -5, y: 0.5, z: -4}
+  - {x: -5, y: 0.5, z: 0}
+  - {x: -5, y: 0.5, z: 4}
+  - {x: 5, y: 0.5, z: -4}
+  - {x: 5, y: 0.5, z: 0}
+  - {x: 5, y: 0.5, z: 4}
+  - {x: 0, y: 0.5, z: -5}
+  - {x: 0, y: 0.5, z: 5}
   enemyPositions:
   - {x: 8, y: 1, z: 8}
   - {x: -8, y: 1, z: 8}

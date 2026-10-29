@@ -152,6 +152,7 @@ MonoBehaviour:
   bombPrefab: {fileID: 8418782294868559945, guid: d0777c1b0e90edd4ca7df2d17246e7a9, type: 3}
   enemyPrefab: {fileID: 5461388070195979968, guid: cae5080f970cfd849b6263ed6a6eca9e, type: 3}
   roundPrefab: {fileID: 720239261868818957, guid: 916af19df14b3e343b5dc7de22f884d5, type: 3}
+  pickupPrefab: {fileID: 4732189230144053612, guid: e54189d9b4b137d4baaf4abf946cbd99, type: 3}
 --- !u!4 &699955010
 Transform:
   m_ObjectHideFlags: 0
