@@ -4,7 +4,7 @@ using System.Reflection;
 using NUnit.Framework;
 
 int passed = 0, failed = 0;
-foreach (Type fixture in new[] { typeof(CombatRulesTests), typeof(BombStockTests), typeof(PickupClaimTests) })
+foreach (Type fixture in new[] { typeof(CombatRulesTests), typeof(BombStockTests), typeof(PickupClaimTests), typeof(GameModeRulesTests) })
 {
     foreach (MethodInfo test in fixture.GetMethods().Where(method => method.IsDefined(typeof(TestAttribute), false)))
     {

@@ -7,6 +7,8 @@ namespace BombTag.Online
     {
         public const int MaxPlayers = 2;
         public const ushort Port = 7777;
+        // Increment when the replicated state layout changes.
+        public const ushort ProtocolVersion = 1;
         public const float ArenaLimit = 23f;
 
         public static Vector2 SanitizeMovement(Vector2 input)

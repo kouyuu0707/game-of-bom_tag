@@ -123,7 +123,7 @@ namespace BombTag.OnlineEditor
                 EditorBuildSettings.scenes = EditorBuildSettings.scenes
                     .Concat(new[] { new EditorBuildSettingsScene(ScenePath, true) }).ToArray();
             AssetDatabase.SaveAssets();
-            Debug.Log("Co-op ready. Connect 2 players, then the host presses Start game. B places, E detonates.");
+            Debug.Log("Game ready. Choose Single Player, or connect 2 players for co-op. B places, E detonates.");
             return true;
         }
 

@@ -1,7 +1,8 @@
 {
   "name": "BombTag.Online.Tests",
   "references": [
-    "BombTag.Online"
+    "BombTag.Online",
+    "Unity.Netcode.Runtime"
   ],
   "includePlatforms": [
     "Editor"

@@ -24,6 +24,9 @@ namespace BombTag.Online
         private readonly List<OnlineBombPickup> pickups = new List<OnlineBombPickup>();
         private readonly NetworkVariable<int> pickupsRemaining = new NetworkVariable<int>(0);
         public int PickupsRemaining => pickupsRemaining.Value;
+        private readonly NetworkVariable<GameMode> mode = new NetworkVariable<GameMode>(GameMode.Cooperative);
+        public GameMode Mode => mode.Value;
+        public bool CanStartWithPlayers(int players) => GameModeRules.CanStartRound(Mode, players);
         public static OnlineRound Instance { get; private set; }
         public OnlineRoundPhase Phase => phase.Value;
         public bool IsPlaying => Phase == OnlineRoundPhase.Playing;
@@ -37,9 +40,15 @@ namespace BombTag.Online
                 Instance = null;
         }
 
+        public void SetModeOnServer(GameMode selectedMode)
+        {
+            if (IsSpawned && IsServer && !IsPlaying)
+                mode.Value = selectedMode;
+        }
+
         public void StartRoundOnServer()
         {
-            if (!IsSpawned || !IsServer || IsPlaying || NetworkManager.ConnectedClientsIds.Count < ConnectionRules.MaxPlayers)
+            if (!IsSpawned || !IsServer || IsPlaying || !CanStartWithPlayers(NetworkManager.ConnectedClientsIds.Count))
                 return;
             StartError = null;
             foreach (NetworkClient client in NetworkManager.ConnectedClientsList)
@@ -47,7 +56,7 @@ namespace BombTag.Online
                 if (client.PlayerObject == null || client.PlayerObject.GetComponent<OnlineHealth>() == null ||
                     client.PlayerObject.GetComponent<OnlineBombInventory>() == null || client.PlayerObject.GetComponent<OnlinePlayer>() == null)
                 {
-                    StartError = "Wait for both players to finish loading, then try again.";
+                    StartError = "Wait for all players to finish loading, then try again.";
                     return;
                 }
             }
