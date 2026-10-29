@@ -12,12 +12,13 @@ namespace BombTag.Online
     public class OnlineSessionController : MonoBehaviour
     {
         [SerializeField] private GameObject playerPrefab;
+        [SerializeField] private GameObject bombPrefab;
         private readonly ConnectionSlots slots = new ConnectionSlots();
         private NetworkManager manager;
         private UnityTransport transport;
         private ISession session;
         private string code = "";
-        private string status = "Choose Host or Join. WASD / arrows to move.";
+        private string status = "Choose Host or Join. WASD: move / B: place / E: detonate.";
         private bool busy;
         private bool disposed;
         private bool localOptions;
@@ -44,13 +45,15 @@ namespace BombTag.Online
             manager.NetworkConfig.EnableSceneManagement = false;
             manager.NetworkConfig.ConnectionApproval = true;
             manager.NetworkConfig.TickRate = 30;
+            if (bombPrefab != null)
+                manager.AddNetworkPrefab(bombPrefab);
             manager.ConnectionApprovalCallback = ApproveConnection;
             manager.OnClientConnectedCallback += Connected;
             manager.OnClientDisconnectCallback += Disconnected;
             manager.OnTransportFailure += TransportFailed;
-            if (playerPrefab == null)
+            if (playerPrefab == null || bombPrefab == null)
             {
-                status = "Missing player prefab. Recreate the online test scene from Tools / Bomb Tag.";
+                status = "Update this scene using Tools / Bomb Tag / Create or Open Online Test.";
                 enabled = false;
             }
         }
@@ -165,7 +168,7 @@ namespace BombTag.Online
         }
 
         private bool CanStart() => !disposed && !busy && !connecting && manager != null &&
-            !manager.IsListening && !manager.ShutdownInProgress && playerPrefab != null;
+            !manager.IsListening && !manager.ShutdownInProgress && playerPrefab != null && bombPrefab != null;
 
         private void StartLocal(bool host)
         {
@@ -219,7 +222,8 @@ namespace BombTag.Online
         {
             GUILayout.BeginArea(new Rect(16, 16, 340, 380), GUI.skin.box);
             GUILayout.Label("Bomb Tag - 2 player connection test");
-            GUILayout.Label("Movement only. Bombs and AI are not enabled here yet.");
+            GUILayout.Label("WASD: Move   B: Place   E: Detonate your bombs");
+            GUILayout.Label("Bomb placement test. AI and damage are not enabled yet.");
             GUILayout.Space(8);
             GUILayout.Label(status);
             bool running = manager != null && manager.IsListening;
@@ -249,6 +253,13 @@ namespace BombTag.Online
             }
             if (running && manager.IsServer)
                 GUILayout.Label("Players: " + manager.ConnectedClientsIds.Count + "/2");
+            if (manager != null && manager.IsConnectedClient && manager.LocalClient.PlayerObject != null &&
+                manager.LocalClient.PlayerObject.TryGetComponent(out OnlineBombInventory inventory))
+            {
+                GUILayout.Label($"Bombs: {inventory.Count}/{BombStock.Capacity}   Placed: {inventory.PlacedCount}");
+                if (inventory.Count == 0)
+                    GUILayout.Label("No bombs left. Reconnect to start with 2 again.");
+            }
             GUI.enabled = !busy && (running || session != null || connecting);
             if (GUILayout.Button("Disconnect"))
                 StopConnection("Disconnected. You can start another room.");

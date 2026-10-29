@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace BombTag.Online
 {
-    [RequireComponent(typeof(NetworkObject), typeof(CharacterController))]
+    [RequireComponent(typeof(NetworkObject), typeof(CharacterController), typeof(OnlineBombInventory))]
     public class OnlinePlayer : NetworkBehaviour
     {
         [SerializeField, Min(0)] private float moveSpeed = 5f;
@@ -11,10 +11,12 @@ namespace BombTag.Online
         private Vector2 movement;
         private float lastInputTime;
         private Camera followCamera;
+        private OnlineBombInventory inventory;
 
         public override void OnNetworkSpawn()
         {
             character = GetComponent<CharacterController>();
+            inventory = GetComponent<OnlineBombInventory>();
             // Only the host moves the collider. NetworkTransform distributes its position.
             character.enabled = IsServer;
             if (IsOwner)
@@ -26,6 +28,16 @@ namespace BombTag.Online
             properties.SetColor("_BaseColor", color);
             properties.SetColor("_Color", color);
             GetComponent<Renderer>().SetPropertyBlock(properties);
+        }
+
+        private void Update()
+        {
+            if (!IsSpawned || !IsOwner || !Application.isFocused || inventory == null)
+                return;
+            if (Input.GetKeyDown(KeyCode.B))
+                inventory.RequestPlace();
+            if (Input.GetKeyDown(KeyCode.E))
+                inventory.RequestDetonate();
         }
 
         private void FixedUpdate()
