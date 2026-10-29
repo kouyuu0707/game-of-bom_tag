@@ -9,6 +9,7 @@ public class BombSupplySetup : MonoBehaviour
     [SerializeField] private GameObject pickupPrefab;
     [SerializeField] private Vector3[] pickupPositions;
     private TextMeshProUGUI counter;
+    private PlayerHealth health;
 
     private void Start()
     {
@@ -35,24 +36,31 @@ public class BombSupplySetup : MonoBehaviour
         RectTransform rect = label.GetComponent<RectTransform>();
         rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0, 1);
         rect.anchoredPosition = new Vector2(24, -24);
-        rect.sizeDelta = new Vector2(600, 100);
+        rect.sizeDelta = new Vector2(600, 140);
         counter = label.GetComponent<TextMeshProUGUI>();
         counter.fontSize = 28;
         counter.color = Color.white;
         counter.outlineWidth = 0.2f;
         counter.raycastTarget = false;
+        health = playerInventory.GetComponent<PlayerHealth>();
+        if (health != null)
+            health.Changed += RefreshHealth;
         playerInventory.CountChanged += Refresh;
         Refresh(playerInventory.Count);
     }
 
     private void Refresh(int count)
     {
-        counter.text = $"Bombs: {count}/{BombInventory.Capacity}\nB: Place    E: Detonate all yours";
+        counter.text = $"HP: {(health != null ? health.Current : 0)}/{PlayerHealth.MaxHealth}\nBombs: {count}/{BombInventory.Capacity}\nB: Place    E: Detonate all yours";
     }
+
+    private void RefreshHealth(int current) => Refresh(playerInventory.Count);
 
     private void OnDestroy()
     {
         if (playerInventory != null)
             playerInventory.CountChanged -= Refresh;
+        if (health != null)
+            health.Changed -= RefreshHealth;
     }
 }

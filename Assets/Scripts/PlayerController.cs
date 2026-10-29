@@ -1,6 +1,6 @@
 using UnityEngine;
 
-[RequireComponent(typeof(CharacterController), typeof(BombInventory))]
+[RequireComponent(typeof(CharacterController), typeof(BombInventory), typeof(PlayerHealth))]
 public class PlayerController : MonoBehaviour
 {
     public float moveSpeed = 5f;
