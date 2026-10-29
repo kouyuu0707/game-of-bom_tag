@@ -1,16 +1,18 @@
 using UnityEngine;
 
+[RequireComponent(typeof(CharacterController), typeof(BombInventory))]
 public class PlayerController : MonoBehaviour
 {
     public float moveSpeed = 5f;
     public bool canMove = true;
     public GameObject bombPrefab;
-    private GameObject placedBomb;
+    private BombInventory inventory;
     private CharacterController controller;
 
     void Start()
     {
         controller = GetComponent<CharacterController>();
+        inventory = GetComponent<BombInventory>();
     }
 
     void Update()
@@ -33,20 +35,12 @@ public class PlayerController : MonoBehaviour
             Vector3 bombPosition =
                 transform.position + new Vector3(0, -1.0f, 0);
 
-            placedBomb = Instantiate(bombPrefab, bombPosition, Quaternion.identity);
+            inventory.TryPlace(bombPrefab, bombPosition);
         }
 
         if (Input.GetKeyDown(KeyCode.E))
         {
-            if (placedBomb != null)
-            {
-                BombController bombController =
-                    placedBomb.GetComponent<BombController>();
-
-                bombController.Explode();
-
-                placedBomb = null;
-            }
+            inventory.DetonateAll();
         }
     }
 }
