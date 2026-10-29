@@ -7,6 +7,8 @@
     <PackageReference Include="NUnit" Version="3.14.0" />
     <Compile Include="../../Assets/Online/Runtime/CombatRules.cs" Link="CombatRules.cs" />
     <Compile Include="../../Assets/Online/Runtime/BombStock.cs" Link="BombStock.cs" />
+    <Compile Include="../../Assets/Online/Runtime/PickupClaim.cs" Link="PickupClaim.cs" />
+    <Compile Include="../../Assets/Online/Tests/Editor/PickupClaimTests.cs" Link="PickupClaimTests.cs" />
     <Compile Include="../../Assets/Online/Tests/Editor/CombatRulesTests.cs" Link="CombatRulesTests.cs" />
     <Compile Include="../../Assets/Online/Tests/Editor/BombStockTests.cs" Link="BombStockTests.cs" />
   </ItemGroup>

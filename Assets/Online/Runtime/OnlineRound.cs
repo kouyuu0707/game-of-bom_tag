@@ -10,10 +10,20 @@ namespace BombTag.Online
     public class OnlineRound : NetworkBehaviour
     {
         [SerializeField] private OnlineEnemy enemyPrefab;
+        [SerializeField] private OnlineBombPickup pickupPrefab;
+        [SerializeField] private Vector3[] pickupPositions =
+        {
+            new Vector3(-5, 0.5f, -4), new Vector3(-5, 0.5f, 0), new Vector3(-5, 0.5f, 4),
+            new Vector3(5, 0.5f, -4), new Vector3(5, 0.5f, 0), new Vector3(5, 0.5f, 4),
+            new Vector3(0, 0.5f, -5), new Vector3(0, 0.5f, 5)
+        };
         [SerializeField] private Vector3[] enemyPositions = { new Vector3(8, 1, 8), new Vector3(-8, 1, 8) };
         private readonly NetworkVariable<OnlineRoundPhase> phase = new NetworkVariable<OnlineRoundPhase>(OnlineRoundPhase.Waiting);
         private readonly NetworkVariable<int> remaining = new NetworkVariable<int>(0);
         private readonly List<OnlineEnemy> enemies = new List<OnlineEnemy>();
+        private readonly List<OnlineBombPickup> pickups = new List<OnlineBombPickup>();
+        private readonly NetworkVariable<int> pickupsRemaining = new NetworkVariable<int>(0);
+        public int PickupsRemaining => pickupsRemaining.Value;
         public static OnlineRound Instance { get; private set; }
         public OnlineRoundPhase Phase => phase.Value;
         public bool IsPlaying => Phase == OnlineRoundPhase.Playing;
@@ -42,7 +52,7 @@ namespace BombTag.Online
                 }
             }
             NavMeshSurface surface = FindFirstObjectByType<NavMeshSurface>();
-            if (surface == null || enemyPrefab == null || enemyPositions == null || enemyPositions.Length == 0)
+            if (surface == null || enemyPrefab == null || pickupPrefab == null || enemyPositions == null || enemyPositions.Length == 0)
             {
                 StartError = "Update OnlineTest using Tools / Bomb Tag / Create or Open Online Test.";
                 return;
@@ -66,6 +76,12 @@ namespace BombTag.Online
                     enemy.NetworkObject.Despawn();
             }
             enemies.Clear();
+            foreach (OnlineBombPickup pickup in pickups)
+            {
+                if (pickup != null && pickup.IsSpawned)
+                    pickup.NetworkObject.Despawn();
+            }
+            pickups.Clear();
             int slot = 0;
             foreach (NetworkClient client in NetworkManager.ConnectedClientsList)
             {
@@ -84,6 +100,13 @@ namespace BombTag.Online
                 enemy.NetworkObject.Spawn();
                 enemies.Add(enemy);
             }
+            foreach (Vector3 position in pickupPositions ?? System.Array.Empty<Vector3>())
+            {
+                OnlineBombPickup pickup = Instantiate(pickupPrefab, position, Quaternion.identity);
+                pickup.NetworkObject.Spawn();
+                pickups.Add(pickup);
+            }
+            pickupsRemaining.Value = pickups.Count;
             remaining.Value = enemies.Count;
             phase.Value = OnlineRoundPhase.Playing;
         }
@@ -104,6 +127,13 @@ namespace BombTag.Online
                 if (enemy != null && enemy.IsSpawned && !enemy.IsDefeated)
                     aliveEnemies++;
             }
+            int availablePickups = 0;
+            foreach (OnlineBombPickup pickup in pickups)
+            {
+                if (pickup != null && pickup.IsSpawned && !pickup.IsCollected)
+                    availablePickups++;
+            }
+            pickupsRemaining.Value = availablePickups;
             remaining.Value = aliveEnemies;
             phase.Value = CombatRules.EvaluateRound(anyoneAlive, aliveEnemies);
         }

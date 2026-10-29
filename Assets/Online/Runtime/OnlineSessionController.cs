@@ -15,6 +15,7 @@ namespace BombTag.Online
         [SerializeField] private GameObject bombPrefab;
         [SerializeField] private GameObject enemyPrefab;
         [SerializeField] private GameObject roundPrefab;
+        [SerializeField] private GameObject pickupPrefab;
         private readonly ConnectionSlots slots = new ConnectionSlots();
         private NetworkManager manager;
         private UnityTransport transport;
@@ -54,12 +55,14 @@ namespace BombTag.Online
                 manager.AddNetworkPrefab(enemyPrefab);
             if (roundPrefab != null)
                 manager.AddNetworkPrefab(roundPrefab);
+            if (pickupPrefab != null)
+                manager.AddNetworkPrefab(pickupPrefab);
             manager.OnServerStarted += SpawnRound;
             manager.ConnectionApprovalCallback = ApproveConnection;
             manager.OnClientConnectedCallback += Connected;
             manager.OnClientDisconnectCallback += Disconnected;
             manager.OnTransportFailure += TransportFailed;
-            if (playerPrefab == null || bombPrefab == null || enemyPrefab == null || roundPrefab == null)
+            if (playerPrefab == null || bombPrefab == null || enemyPrefab == null || roundPrefab == null || pickupPrefab == null)
             {
                 status = "Update this scene using Tools / Bomb Tag / Create or Open Online Test.";
             }
@@ -190,7 +193,7 @@ namespace BombTag.Online
 
         private bool CanStart() => !disposed && !busy && !connecting && manager != null &&
             !manager.IsListening && !manager.ShutdownInProgress && playerPrefab != null && bombPrefab != null &&
-            enemyPrefab != null && roundPrefab != null;
+            enemyPrefab != null && roundPrefab != null && pickupPrefab != null;
 
         private void StartLocal(bool host)
         {
@@ -282,7 +285,7 @@ namespace BombTag.Online
             {
                 GUILayout.Label($"Bombs: {inventory.Count}/{BombStock.Capacity}   Placed: {inventory.PlacedCount}");
                 if (inventory.Count == 0)
-                    GUILayout.Label("No bombs left. Retry after this round to refill.");
+                    GUILayout.Label("No bombs left. Collect a green supply cube.");
             }
             OnlineRound round = OnlineRound.Instance;
             if (round != null && round.IsSpawned)
@@ -300,6 +303,7 @@ namespace BombTag.Online
                         break;
                     case OnlineRoundPhase.Playing:
                         GUILayout.Label($"Enemies remaining: {round.EnemiesRemaining}");
+                        GUILayout.Label($"Supplies remaining: {round.PickupsRemaining}");
                         break;
                     case OnlineRoundPhase.Victory:
                         GUILayout.Label("Game Clear!");

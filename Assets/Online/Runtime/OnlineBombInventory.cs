@@ -73,7 +73,7 @@ namespace BombTag.Online
                 ShowDetonationClientRpc(bomb.transform.position);
                 bomb.NetworkObject.Despawn();
             }
-            // Detonation does not replenish stock. Pickup synchronization is a later step.
+            // Detonation does not replenish stock. Collect green supplies to refill.
         }
 
         public void ResetOnServer()
@@ -114,7 +114,7 @@ namespace BombTag.Online
                 enemy.DefeatOnServer();
         }
 
-        // For future host-authoritative pickups. Clients cannot refill their own stock.
+        // Called by host-side pickups. Clients cannot refill their own stock.
         public bool TryCollectOnServer()
         {
             if (!IsSpawned || !IsServer || !CanAct || !stock.TryCollect())

@@ -19,6 +19,7 @@ namespace BombTag.OnlineEditor
         private const string PrefabPath = "Assets/Online/Generated/OnlinePlayer.prefab";
         private const string BombPrefabPath = "Assets/Online/Generated/OnlineBomb.prefab";
         private const string EnemyPrefabPath = "Assets/Online/Generated/OnlineEnemy.prefab";
+        private const string PickupPrefabPath = "Assets/Online/Generated/OnlineBombPickup.prefab";
         private const string RoundPrefabPath = "Assets/Online/Generated/OnlineRound.prefab";
 
         [MenuItem("Tools/Bomb Tag/Create or Open Online Test")]
@@ -34,7 +35,8 @@ namespace BombTag.OnlineEditor
             GameObject bombPrefab = EnsureBombPrefab(playerMaterial);
             GameObject prefab = EnsurePlayerPrefab(playerMaterial, bombPrefab);
             GameObject enemyPrefab = EnsureEnemyPrefab(playerMaterial);
-            GameObject roundPrefab = EnsureRoundPrefab(enemyPrefab);
+            GameObject pickupPrefab = EnsurePickupPrefab(playerMaterial);
+            GameObject roundPrefab = EnsureRoundPrefab(enemyPrefab, pickupPrefab);
 
             Scene scene;
             OnlineSessionController controller;
@@ -113,6 +115,7 @@ namespace BombTag.OnlineEditor
             serialized.FindProperty("bombPrefab").objectReferenceValue = bombPrefab;
             serialized.FindProperty("enemyPrefab").objectReferenceValue = enemyPrefab;
             serialized.FindProperty("roundPrefab").objectReferenceValue = roundPrefab;
+            serialized.FindProperty("pickupPrefab").objectReferenceValue = pickupPrefab;
             serialized.ApplyModifiedPropertiesWithoutUndo();
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene, ScenePath);
@@ -148,7 +151,26 @@ namespace BombTag.OnlineEditor
             finally { Object.DestroyImmediate(enemy); }
         }
 
-        private static GameObject EnsureRoundPrefab(GameObject enemyPrefab)
+        private static GameObject EnsurePickupPrefab(Material material)
+        {
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PickupPrefabPath);
+            if (prefab != null)
+                return prefab;
+            GameObject pickup = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            try
+            {
+                pickup.name = "OnlineBombPickup";
+                pickup.transform.localScale = Vector3.one * 0.65f;
+                Object.DestroyImmediate(pickup.GetComponent<BoxCollider>());
+                pickup.AddComponent<NetworkObject>();
+                pickup.AddComponent<OnlineBombPickup>();
+                pickup.GetComponent<Renderer>().sharedMaterial = material;
+                return PrefabUtility.SaveAsPrefabAsset(pickup, PickupPrefabPath);
+            }
+            finally { Object.DestroyImmediate(pickup); }
+        }
+
+        private static GameObject EnsureRoundPrefab(GameObject enemyPrefab, GameObject pickupPrefab)
         {
             GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(RoundPrefabPath);
             if (prefab == null)
@@ -167,6 +189,7 @@ namespace BombTag.OnlineEditor
             {
                 SerializedObject serialized = new SerializedObject(root.GetComponent<OnlineRound>());
                 serialized.FindProperty("enemyPrefab").objectReferenceValue = enemyPrefab.GetComponent<OnlineEnemy>();
+                serialized.FindProperty("pickupPrefab").objectReferenceValue = pickupPrefab.GetComponent<OnlineBombPickup>();
                 if (serialized.ApplyModifiedPropertiesWithoutUndo())
                     PrefabUtility.SaveAsPrefabAsset(root, RoundPrefabPath);
             }
