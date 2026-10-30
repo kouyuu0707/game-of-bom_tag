@@ -5,6 +5,8 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="NUnit" Version="3.14.0" />
+    <Compile Include="../../Assets/Online/Runtime/MapGenerator.cs" Link="MapGenerator.cs" />
+    <Compile Include="../../Assets/Online/Tests/Editor/MapGeneratorTests.cs" Link="MapGeneratorTests.cs" />
     <Compile Include="../../Assets/Online/Runtime/GameModeRules.cs" Link="GameModeRules.cs" />
     <Compile Include="../../Assets/Online/Tests/Editor/GameModeRulesTests.cs" Link="GameModeRulesTests.cs" />
     <Compile Include="../../Assets/Online/Runtime/CombatRules.cs" Link="CombatRules.cs" />

@@ -32,7 +32,8 @@ namespace BombTag.Online
             foreach (Collider collider in nearby)
             {
                 OnlineBombInventory inventory = collider.GetComponentInParent<OnlineBombInventory>();
-                if (inventory == null || !claim.TryClaim(inventory.TryCollectOnServer))
+                if (inventory == null || !ArenaVisibility.IsClear(transform.position, inventory.transform.position) ||
+                    !claim.TryClaim(inventory.TryCollectOnServer))
                     continue;
                 NetworkObject.Despawn();
                 break;

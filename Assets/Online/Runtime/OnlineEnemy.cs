@@ -50,7 +50,7 @@ namespace BombTag.Online
             if (target == null)
                 return;
             agent.SetDestination(target.transform.position);
-            if (nearest <= 1.2f * 1.2f)
+            if (nearest <= 1.2f * 1.2f && ArenaVisibility.IsClear(transform.position, target.transform.position))
                 target.TakeDamageOnServer(1);
         }
 

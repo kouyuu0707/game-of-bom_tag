@@ -109,9 +109,9 @@ namespace BombTag.Online
             }
             // Includes the planter and teammates. Each actor is hit once per explosion.
             foreach (OnlineHealth player in players)
-                player.TakeDamageOnServer(1);
+                if (ArenaVisibility.IsClear(position, player.transform.position)) player.TakeDamageOnServer(1);
             foreach (OnlineEnemy enemy in enemies)
-                enemy.DefeatOnServer();
+                if (ArenaVisibility.IsClear(position, enemy.transform.position)) enemy.DefeatOnServer();
         }
 
         // Called by host-side pickups. Clients cannot refill their own stock.
@@ -137,10 +137,12 @@ namespace BombTag.Online
             ring.useWorldSpace = true;
             ring.widthMultiplier = 0.12f;
             ring.positionCount = 64;
+            Physics.SyncTransforms();
             for (int i = 0; i < ring.positionCount; i++)
             {
                 float angle = i * Mathf.PI * 2f / ring.positionCount;
-                ring.SetPosition(i, position + new Vector3(Mathf.Cos(angle) * CombatRules.BlastRadius, 0.1f, Mathf.Sin(angle) * CombatRules.BlastRadius));
+                ring.SetPosition(i, ArenaVisibility.ClipAtWall(position + Vector3.up * 0.1f,
+                    position + new Vector3(Mathf.Cos(angle) * CombatRules.BlastRadius, 0.1f, Mathf.Sin(angle) * CombatRules.BlastRadius)));
             }
             Destroy(effect, 0.35f);
         }
