@@ -273,6 +273,7 @@ GameObject:
   - component: {fileID: 1411864933}
   - component: {fileID: 1411864932}
   - component: {fileID: 1411864936}
+  - component: {fileID: 1411864937}
   m_Layer: 0
   m_Name: Ground
   m_TagString: Untagged
@@ -406,6 +407,19 @@ MonoBehaviour:
   m_MinRegionArea: 2
   m_NavMeshData: {fileID: 0}
   m_BuildHeightMesh: 0
+--- !u!114 &1411864937
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1411864931}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b0aa41053fa04707a03700b1c9479a73, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BombTag.Online::BombTag.Online.ProceduralArena
+  wallMaterial: {fileID: 2100000, guid: 97b7735962fd73d48b927f22392bb6b6, type: 2}
 --- !u!1 &2099425845
 GameObject:
   m_ObjectHideFlags: 0
