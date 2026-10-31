@@ -16,8 +16,11 @@ namespace BombTag.Online
 
     public sealed class GeneratedMap
     {
-        public const int Size = 15;
+        public const int Size = 25;
         public const float CellSize = 3f;
+        public const float WorldSize = Size * CellSize;
+        public const float GroundSize = WorldSize + 5f;
+        public const float MovementLimit = WorldSize / 2f + 0.5f;
         public const int MinimumPassageCells = 2;
         public const float MinimumPassageWidth = CellSize * MinimumPassageCells;
         private readonly bool[] walls;
@@ -95,7 +98,8 @@ namespace BombTag.Online
                 else
                 {
                     openCount--;
-                    if (++placed == 40) break;
+                    // Preserve approximately the previous obstacle density as the arena grows.
+                    if (++placed == (size - 2) * (size - 2) * 40 / 169) break;
                 }
             }
 

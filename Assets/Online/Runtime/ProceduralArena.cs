@@ -14,9 +14,12 @@ namespace BombTag.Online
         {
             if (Layout != null && Layout.Seed == seed && generatedRoot != null) return;
             Clear();
+            // Keep older saved scenes in sync with the new map footprint as well.
+            transform.localScale = new Vector3(GeneratedMap.GroundSize / 10f,
+                transform.localScale.y, GeneratedMap.GroundSize / 10f);
             Layout = MapGenerator.Generate(seed);
             generatedRoot = new GameObject("Generated Map - " + seed);
-            // Preserve world scale even though the existing plane is scaled 5x.
+            // Preserve world scale even though the ground plane is scaled.
             generatedRoot.transform.SetParent(transform, true);
             for (int z = 0; z < GeneratedMap.Size; z++)
             for (int x = 0; x < GeneratedMap.Size; x++)

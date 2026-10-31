@@ -53,8 +53,8 @@ public class MapGeneratorTests
                 Assert.That(map.IsWall(0, i) && map.IsWall(i, 0) &&
                     map.IsWall(GeneratedMap.Size - 1, i) && map.IsWall(i, GeneratedMap.Size - 1), Is.True);
             }
-            for (int z = 5; z <= 9; z++)
-            for (int x = 5; x <= 9; x++) Assert.That(map.IsWall(x, z), Is.False);
+            for (int z = GeneratedMap.Size / 2 - 2; z <= GeneratedMap.Size / 2 + 2; z++)
+            for (int x = GeneratedMap.Size / 2 - 2; x <= GeneratedMap.Size / 2 + 2; x++) Assert.That(map.IsWall(x, z), Is.False);
         }
     }
 
@@ -71,7 +71,7 @@ public class MapGeneratorTests
             Assert.That(all.Distinct().Count(), Is.EqualTo(12));
             foreach (MapCell cell in all) Assert.That(map.IsWall(cell.X, cell.Z), Is.False);
             foreach (MapCell enemy in map.Enemies)
-                Assert.That(System.Math.Abs(enemy.X - 7) > 2 || System.Math.Abs(enemy.Z - 7) > 2, Is.True);
+                Assert.That(System.Math.Abs(enemy.X - GeneratedMap.Size / 2) > 2 || System.Math.Abs(enemy.Z - GeneratedMap.Size / 2) > 2, Is.True);
         }
     }
 
@@ -88,11 +88,11 @@ public class MapGeneratorTests
     }
 
     [Test]
-    public void WallsFitInsideTheExistingGroundAndMovementBounds()
+    public void WallsFitInsideTheEnlargedGroundAndMovementBounds()
     {
-        Assert.That(GeneratedMap.WorldCoordinate(7), Is.EqualTo(0));
-        Assert.That(GeneratedMap.WorldCoordinate(0) - GeneratedMap.CellSize / 2, Is.GreaterThan(-23));
-        Assert.That(GeneratedMap.WorldCoordinate(14) + GeneratedMap.CellSize / 2, Is.LessThan(23));
+        Assert.That(GeneratedMap.WorldCoordinate(GeneratedMap.Size / 2), Is.EqualTo(0));
+        Assert.That(GeneratedMap.WorldCoordinate(0) - GeneratedMap.CellSize / 2, Is.GreaterThan(-GeneratedMap.MovementLimit));
+        Assert.That(GeneratedMap.WorldCoordinate(GeneratedMap.Size - 1) + GeneratedMap.CellSize / 2, Is.LessThan(GeneratedMap.MovementLimit));
     }
 
     [Test]
@@ -160,6 +160,16 @@ public class MapGeneratorTests
     [Test]
     public void PassageWidthTargetsSixWorldUnits()
     {
+        Assert.That(GeneratedMap.MinimumPassageWidth, Is.GreaterThanOrEqualTo(6f));
+    }
+
+    [Test]
+    public void MapAreaIsApproximatelyThreeTimesThePreviousMap()
+    {
+        float previousWidth = 15 * GeneratedMap.CellSize;
+        float ratio = GeneratedMap.WorldSize * GeneratedMap.WorldSize / (previousWidth * previousWidth);
+        Assert.That(ratio, Is.InRange(2.7f, 3.2f));
+        Assert.That(GeneratedMap.GroundSize, Is.GreaterThan(GeneratedMap.WorldSize));
         Assert.That(GeneratedMap.MinimumPassageWidth, Is.GreaterThanOrEqualTo(6f));
     }
 

@@ -57,7 +57,7 @@ namespace BombTag.OnlineEditor
                 scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
                 GameObject ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
                 ground.name = "Ground";
-                ground.transform.localScale = new Vector3(5, 1, 5);
+                ground.transform.localScale = new Vector3(GeneratedMap.GroundSize / 10f, 1, GeneratedMap.GroundSize / 10f);
                 string materialPath = "Assets/Online/Generated/Ground.mat";
                 Material groundMaterial = AssetDatabase.LoadAssetAtPath<Material>(materialPath);
                 if (groundMaterial == null)
@@ -89,6 +89,8 @@ namespace BombTag.OnlineEditor
                 Debug.LogError("OnlineTest needs its Ground object for navigation. Restore it before building.");
                 return false;
             }
+            groundRoot.transform.localScale = new Vector3(GeneratedMap.GroundSize / 10f,
+                groundRoot.transform.localScale.y, GeneratedMap.GroundSize / 10f);
             NavMeshSurface surface = groundRoot.GetComponent<NavMeshSurface>();
             if (surface == null)
             {

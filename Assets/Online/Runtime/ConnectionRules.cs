@@ -8,8 +8,8 @@ namespace BombTag.Online
         public const int MaxPlayers = 2;
         public const ushort Port = 7777;
         // Increment when replicated state or procedural map rules change.
-        public const ushort ProtocolVersion = 3;
-        public const float ArenaLimit = 23f;
+        public const ushort ProtocolVersion = 4;
+        public const float ArenaLimit = GeneratedMap.MovementLimit;
 
         public static Vector2 SanitizeMovement(Vector2 input)
         {

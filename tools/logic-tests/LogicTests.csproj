@@ -5,6 +5,8 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="NUnit" Version="3.14.0" />
+    <Compile Include="../../Assets/Online/Runtime/PickupRespawnState.cs" Link="PickupRespawnState.cs" />
+    <Compile Include="../../Assets/Online/Tests/Editor/PickupRespawnStateTests.cs" Link="PickupRespawnStateTests.cs" />
     <Compile Include="../../Assets/Online/Runtime/MapGenerator.cs" Link="MapGenerator.cs" />
     <Compile Include="../../Assets/Online/Tests/Editor/MapGeneratorTests.cs" Link="MapGeneratorTests.cs" />
     <Compile Include="../../Assets/Online/Runtime/GameModeRules.cs" Link="GameModeRules.cs" />

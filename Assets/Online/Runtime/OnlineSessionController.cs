@@ -369,7 +369,7 @@ namespace BombTag.Online
                         break;
                     case OnlineRoundPhase.Playing:
                         GUILayout.Label($"Enemies remaining: {round.EnemiesRemaining}");
-                        GUILayout.Label($"Supplies remaining: {round.PickupsRemaining}");
+                        GUILayout.Label($"Supplies available: {round.PickupsRemaining}");
                         break;
                     case OnlineRoundPhase.Victory:
                         GUILayout.Label("Game Clear!");
