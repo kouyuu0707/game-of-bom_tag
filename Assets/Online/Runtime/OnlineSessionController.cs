@@ -18,6 +18,7 @@ namespace BombTag.Online
         [SerializeField] private GameObject pickupPrefab;
         private readonly ConnectionSlots slots = new ConnectionSlots();
         private NetworkManager manager;
+        private ProceduralArena arena;
         private UnityTransport transport;
         private SinglePlayerTransport singlePlayerTransport;
         private GameMode mode = GameMode.Cooperative;
@@ -37,6 +38,7 @@ namespace BombTag.Online
         private void Awake()
         {
             Application.runInBackground = true;
+            arena = FindFirstObjectByType<ProceduralArena>();
             if (NetworkManager.Singleton != null)
             {
                 status = "Another network session is already running. Stop it first.";
@@ -67,7 +69,7 @@ namespace BombTag.Online
             manager.OnClientConnectedCallback += Connected;
             manager.OnClientDisconnectCallback += Disconnected;
             manager.OnTransportFailure += TransportFailed;
-            if (playerPrefab == null || bombPrefab == null || enemyPrefab == null || roundPrefab == null || pickupPrefab == null)
+            if (playerPrefab == null || bombPrefab == null || enemyPrefab == null || roundPrefab == null || pickupPrefab == null || arena == null)
             {
                 status = "Update this scene using Tools / Bomb Tag / Create or Open Online Test.";
             }
@@ -220,7 +222,7 @@ namespace BombTag.Online
 
         private bool CanStart() => !disposed && !busy && !connecting && manager != null &&
             !manager.IsListening && !manager.ShutdownInProgress && playerPrefab != null && bombPrefab != null &&
-            enemyPrefab != null && roundPrefab != null && pickupPrefab != null;
+            enemyPrefab != null && roundPrefab != null && pickupPrefab != null && arena != null;
 
         private void StartSinglePlayer()
         {
@@ -353,6 +355,7 @@ namespace BombTag.Online
             if (round != null && round.IsSpawned)
             {
                 GUILayout.Space(8);
+                if (round.MapSeed != 0) GUILayout.Label($"Map: {round.MapSeed}");
                 foreach (OnlineHealth health in FindObjectsByType<OnlineHealth>(FindObjectsSortMode.None))
                 {
                     if (health.IsSpawned)
@@ -380,6 +383,8 @@ namespace BombTag.Online
                     GUI.enabled = !busy && round.CanStartWithPlayers(manager.ConnectedClientsIds.Count);
                     if (GUILayout.Button(round.Phase == OnlineRoundPhase.Waiting ? "Start game" : "Retry"))
                         round.StartRoundOnServer();
+                    if (GUILayout.Button("New map"))
+                        round.StartRoundOnServer(true);
                     GUI.enabled = true;
                     if (!string.IsNullOrEmpty(round.StartError))
                         GUILayout.Label(round.StartError);

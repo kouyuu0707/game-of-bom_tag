@@ -97,6 +97,21 @@ namespace BombTag.OnlineEditor
                 surface.useGeometry = NavMeshCollectGeometry.PhysicsColliders;
             }
 
+            ProceduralArena arena = groundRoot.GetComponent<ProceduralArena>();
+            if (arena == null) arena = groundRoot.AddComponent<ProceduralArena>();
+            const string wallMaterialPath = "Assets/Online/Generated/Wall.mat";
+            Material wallMaterial = AssetDatabase.LoadAssetAtPath<Material>(wallMaterialPath);
+            if (wallMaterial == null)
+            {
+                wallMaterial = new Material(playerMaterial);
+                wallMaterial.name = "Map Wall";
+                wallMaterial.SetColor("_BaseColor", new Color(0.55f, 0.62f, 0.7f));
+                AssetDatabase.CreateAsset(wallMaterial, wallMaterialPath);
+            }
+            SerializedObject arenaSettings = new SerializedObject(arena);
+            arenaSettings.FindProperty("wallMaterial").objectReferenceValue = wallMaterial;
+            arenaSettings.ApplyModifiedPropertiesWithoutUndo();
+
             SerializedObject serialized = new SerializedObject(controller);
             SerializedProperty playerReference = serialized.FindProperty("playerPrefab");
             if (playerReference.objectReferenceValue == null)

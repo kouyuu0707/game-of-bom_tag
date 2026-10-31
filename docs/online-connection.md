@@ -1,5 +1,7 @@
 # オンライン協力プレイの確認
 
+マップは開始ごとに自動生成します。[配置・Retry・New mapの手順](procedural-map.md)も確認してください。
+
 1人で遊ぶ場合は同じメニューのSingle Playerを選びます。[シングルモードの手順](single-player.md)を参照してください。
 
 OnlineTestでは、2人の移動・爆弾・鬼・HP・勝敗をホスト側で管理し、結果を同期します。
@@ -43,10 +45,9 @@ Editorとexeは必ず同じ版を使ってください。古いexeでは新し�
 - 進行中の途中参加は拒否します。終了後は参加でき、2人がそろえばRetryできます。
 - 進行中にゲストが切断した場合、ホストは続行できます。ホストが終了すると部屋は切断されます。
 
-鬼の出現位置は `Assets/Online/Generated/OnlineRound.prefab` のEnemy Positionsで調整できます。
-補充アイテムの位置は同じプレハブのPickup Positions、取得範囲はOnlineBombPickupプレハブのPickup Radiusで調整できます。
+鬼と補充アイテムの位置はMap番号から自動生成します。取得範囲はOnlineBombPickupプレハブのPickup Radiusで調整できます。
 地面のNavMeshは開始時にホストが生成します。出現位置は歩行可能領域内にしてください。
-壁による爆風遮断、誘爆、復活・救助、ホスト引き継ぎは未実装です。
+壁で爆風が止まります。誘爆、壁の破壊、復活・救助、ホスト引き継ぎは未実装です。
 
 ## 2画面で確認する項目
 
@@ -89,7 +90,7 @@ Editorとexeは別の認証プロファイルを使用します。同じPCでexe
 
 ## 自動テストと検証状況
 
-Unityでは `Window → General → Test Runner → EditMode → Run All` で次の33件を実行できます。
+Unityでは `Window → General → Test Runner → EditMode → Run All` で次の43件を実行できます。
 
 - ConnectionRulesTests：6件（人数制限、参加枠の再利用、入力の制限など）
 - BombStockTests：4件（初期所持数、個別管理、残弾0、最大5個）
@@ -97,10 +98,12 @@ Unityでは `Window → General → Test Runner → EditMode → Run All` で次
 - PickupClaimTests：6件（二重取得、満杯時の保持、仲間の取得、複数アイテム、再入時と失敗時の保護）
 - GameModeRulesTests：4件（シングル／協力の開始人数と参加可否）
 - SinglePlayerTransportTests：2件（受信のない通信層、外部送信の拒否）
+- MapGeneratorTests：7件（配置の再現性、接続性、出現位置と範囲）
+- ArenaVisibilityTests：3件（壁での遮断、他のキャラクター越しの命中、古い壁の無効化）
 
-Unityを必要としない所持数・HP・勝敗・アイテム取得・モードの25件は、同じテストソースを .NET 8 でも実行できます。
+Unityを必要としない所持数・HP・勝敗・アイテム取得・モード・マップの32件は、同じテストソースを .NET 8 でも実行できます。
 リポジトリのルートで `dotnet run --project tools/logic-tests/LogicTests.csproj --configuration Release` を実行します。
-この25件はクラウドで実行して全件成功しました。C#の構文も静的チェック済みです。
+この32件はクラウドで実行して全件成功しました。C#の構文も静的チェック済みです。
 
 今回のシングルモードと協力モードの切り替えについて、クラウドでのUnityコンパイル、NavMesh生成、2プロセス通信の検証は未実施です。
 .NETの成功はUnityのコンパイルや実通信の成功を示すものではありません。上記の2画面確認を別途行ってください。
