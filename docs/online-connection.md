@@ -90,7 +90,7 @@ Editorとexeは別の認証プロファイルを使用します。同じPCでexe
 
 ## 自動テストと検証状況
 
-Unityでは `Window → General → Test Runner → EditMode → Run All` で次の43件を実行できます。
+Unityでは `Window → General → Test Runner → EditMode → Run All` で次の47件を実行できます。
 
 - ConnectionRulesTests：6件（人数制限、参加枠の再利用、入力の制限など）
 - BombStockTests：4件（初期所持数、個別管理、残弾0、最大5個）
@@ -98,12 +98,12 @@ Unityでは `Window → General → Test Runner → EditMode → Run All` で次
 - PickupClaimTests：6件（二重取得、満杯時の保持、仲間の取得、複数アイテム、再入時と失敗時の保護）
 - GameModeRulesTests：4件（シングル／協力の開始人数と参加可否）
 - SinglePlayerTransportTests：2件（受信のない通信層、外部送信の拒否）
-- MapGeneratorTests：7件（配置の再現性、接続性、出現位置と範囲）
+- MapGeneratorTests：11件（配置の再現性、接続性、出現位置、通路の広さと迂回路）
 - ArenaVisibilityTests：3件（壁での遮断、他のキャラクター越しの命中、古い壁の無効化）
 
-Unityを必要としない所持数・HP・勝敗・アイテム取得・モード・マップの32件は、同じテストソースを .NET 8 でも実行できます。
+Unityを必要としない所持数・HP・勝敗・アイテム取得・モード・マップの36件は、同じテストソースを .NET 8 でも実行できます。
 リポジトリのルートで `dotnet run --project tools/logic-tests/LogicTests.csproj --configuration Release` を実行します。
-この32件はクラウドで実行して全件成功しました。C#の構文も静的チェック済みです。
+この36件はクラウドで実行して全件成功しました。C#の構文も静的チェック済みです。
 
 今回のシングルモードと協力モードの切り替えについて、クラウドでのUnityコンパイル、NavMesh生成、2プロセス通信の検証は未実施です。
 .NETの成功はUnityのコンパイルや実通信の成功を示すものではありません。上記の2画面確認を別途行ってください。
