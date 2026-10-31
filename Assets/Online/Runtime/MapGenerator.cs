@@ -18,6 +18,8 @@ namespace BombTag.Online
     {
         public const int Size = 15;
         public const float CellSize = 3f;
+        public const int MinimumPassageCells = 2;
+        public const float MinimumPassageWidth = CellSize * MinimumPassageCells;
         private readonly bool[] walls;
         public int Seed { get; }
         public IReadOnlyList<MapCell> Players { get; }
@@ -76,7 +78,8 @@ namespace BombTag.Online
             for (int x = 0; x < size; x++)
             {
                 walls[z * size + x] = x == 0 || z == 0 || x == size - 1 || z == size - 1;
-                if (x > 0 && z > 0 && x < size - 1 && z < size - 1 &&
+                // Keep a two-cell-wide escape circuit around the entire arena.
+                if (x > 2 && z > 2 && x < size - 3 && z < size - 3 &&
                     (Math.Abs(x - center) > 2 || Math.Abs(z - center) > 2))
                     candidates.Add(new MapCell(x, z));
             }
@@ -87,11 +90,7 @@ namespace BombTag.Online
             {
                 int index = cell.Z * size + cell.X;
                 walls[index] = true;
-                int[] distances = Distances(walls);
-                int reachable = 0;
-                foreach (int distance in distances)
-                    if (distance >= 0) reachable++;
-                if (reachable != openCount - 1)
+                if (!HasWideRoutes(walls) || !HasAlternativeRoutes(walls, openCount - 1))
                     walls[index] = false;
                 else
                 {
@@ -131,6 +130,59 @@ namespace BombTag.Online
             }
             random.Shuffle(floors);
             return new GeneratedMap(seed, walls, players, enemies.ToArray(), floors.GetRange(0, 8).ToArray());
+        }
+
+        private static bool HasWideRoutes(bool[] walls)
+        {
+            int size = GeneratedMap.Size;
+            for (int z = 1; z < size - 1; z++)
+            for (int x = 1; x < size - 1; x++)
+            {
+                if (walls[z * size + x]) continue;
+                bool hasSpace = false;
+                // Every floor cell must belong to a fully open 2x2 area.
+                for (int dz = -1; dz <= 0; dz++)
+                for (int dx = -1; dx <= 0; dx++)
+                {
+                    int corner = (z + dz) * size + x + dx;
+                    if (!walls[corner] && !walls[corner + 1] &&
+                        !walls[corner + size] && !walls[corner + size + 1]) hasSpace = true;
+                }
+                if (!hasSpace) return false;
+            }
+            return true;
+        }
+
+        private static bool HasAlternativeRoutes(bool[] walls, int expectedOpenCount)
+        {
+            // Tarjan's articulation-point check: no single floor cell may be the
+            // only link between two areas. This rules out dead ends and bottlenecks.
+            int size = GeneratedMap.Size;
+            var order = new int[walls.Length];
+            var low = new int[walls.Length];
+            for (int i = 0; i < order.Length; i++) order[i] = -1;
+            int visited = 0;
+            int[] offsets = { -1, 1, -size, size };
+            bool Visit(int current, int parent)
+            {
+                order[current] = low[current] = visited++;
+                int children = 0;
+                foreach (int offset in offsets)
+                {
+                    int next = current + offset;
+                    if (next < 0 || next >= walls.Length || walls[next]) continue;
+                    if (order[next] < 0)
+                    {
+                        children++;
+                        if (!Visit(next, current)) return false;
+                        low[current] = Math.Min(low[current], low[next]);
+                        if (parent >= 0 && low[next] >= order[current]) return false;
+                    }
+                    else if (next != parent) low[current] = Math.Min(low[current], order[next]);
+                }
+                return parent >= 0 || children <= 1;
+            }
+            return Visit((size / 2) * size + size / 2, -1) && visited == expectedOpenCount;
         }
 
         private static int[] Distances(bool[] walls)

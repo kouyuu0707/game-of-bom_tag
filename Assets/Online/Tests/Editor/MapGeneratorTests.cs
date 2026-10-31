@@ -95,6 +95,74 @@ public class MapGeneratorTests
         Assert.That(GeneratedMap.WorldCoordinate(14) + GeneratedMap.CellSize / 2, Is.LessThan(23));
     }
 
+    [Test]
+    public void EveryFloorHasTwoByTwoSpaceAcrossOneThousandSeeds()
+    {
+        for (int seed = 0; seed < 1000; seed++)
+        {
+            GeneratedMap map = MapGenerator.Generate(seed);
+            for (int z = 1; z < GeneratedMap.Size - 1; z++)
+            for (int x = 1; x < GeneratedMap.Size - 1; x++)
+            {
+                if (map.IsWall(x, z)) continue;
+                bool spacious = false;
+                for (int dz = -1; dz <= 0; dz++)
+                for (int dx = -1; dx <= 0; dx++)
+                    if (!map.IsWall(x + dx, z + dz) && !map.IsWall(x + dx + 1, z + dz) &&
+                        !map.IsWall(x + dx, z + dz + 1) && !map.IsWall(x + dx + 1, z + dz + 1)) spacious = true;
+                Assert.That(spacious, Is.True, $"Narrow tile in seed {seed}: {x},{z}");
+            }
+        }
+    }
+
+    [Test]
+    public void OuterCircuitAlwaysHasTwoOpenRows()
+    {
+        for (int seed = 0; seed < 100; seed++)
+        {
+            GeneratedMap map = MapGenerator.Generate(seed);
+            for (int z = 1; z < GeneratedMap.Size - 1; z++)
+            for (int x = 1; x < GeneratedMap.Size - 1; x++)
+                if (x <= 2 || z <= 2 || x >= GeneratedMap.Size - 3 || z >= GeneratedMap.Size - 3)
+                    Assert.That(map.IsWall(x, z), Is.False);
+        }
+    }
+
+    [Test]
+    public void BlockingAnySingleCellLeavesAnotherRouteAcrossOneHundredSeeds()
+    {
+        // Independent brute-force check, rather than repeating the generator's DFS algorithm.
+        for (int seed = 0; seed < 100; seed++)
+        {
+            GeneratedMap map = MapGenerator.Generate(seed);
+            var floors = new List<MapCell>();
+            for (int z = 1; z < GeneratedMap.Size - 1; z++)
+            for (int x = 1; x < GeneratedMap.Size - 1; x++)
+                if (!map.IsWall(x, z)) floors.Add(new MapCell(x, z));
+            foreach (MapCell blocked in floors)
+            {
+                var visited = new HashSet<MapCell>();
+                var queue = new Queue<MapCell>();
+                MapCell start = floors.First(cell => !cell.Equals(blocked));
+                visited.Add(start); queue.Enqueue(start);
+                while (queue.Count > 0)
+                {
+                    MapCell current = queue.Dequeue();
+                    foreach (MapCell next in new[] { new MapCell(current.X - 1, current.Z),
+                        new MapCell(current.X + 1, current.Z), new MapCell(current.X, current.Z - 1), new MapCell(current.X, current.Z + 1) })
+                        if (!next.Equals(blocked) && !map.IsWall(next.X, next.Z) && visited.Add(next)) queue.Enqueue(next);
+                }
+                Assert.That(visited.Count, Is.EqualTo(floors.Count - 1), $"Bottleneck in seed {seed}: {blocked}");
+            }
+        }
+    }
+
+    [Test]
+    public void PassageWidthTargetsSixWorldUnits()
+    {
+        Assert.That(GeneratedMap.MinimumPassageWidth, Is.GreaterThanOrEqualTo(6f));
+    }
+
     private static string Fingerprint(GeneratedMap map)
     {
         var text = new StringBuilder();
