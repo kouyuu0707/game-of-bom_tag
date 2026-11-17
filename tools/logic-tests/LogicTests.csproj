@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="NUnit" Version="3.14.0" />
+    <Compile Include="../../Assets/Online/Runtime/PickupRespawnState.cs" Link="PickupRespawnState.cs" />
+    <Compile Include="../../Assets/Online/Tests/Editor/PickupRespawnStateTests.cs" Link="PickupRespawnStateTests.cs" />
+    <Compile Include="../../Assets/Online/Runtime/MapGenerator.cs" Link="MapGenerator.cs" />
+    <Compile Include="../../Assets/Online/Tests/Editor/MapGeneratorTests.cs" Link="MapGeneratorTests.cs" />
+    <Compile Include="../../Assets/Online/Runtime/GameModeRules.cs" Link="GameModeRules.cs" />
+    <Compile Include="../../Assets/Online/Tests/Editor/GameModeRulesTests.cs" Link="GameModeRulesTests.cs" />
+    <Compile Include="../../Assets/Online/Runtime/CombatRules.cs" Link="CombatRules.cs" />
+    <Compile Include="../../Assets/Online/Runtime/BombStock.cs" Link="BombStock.cs" />
+    <Compile Include="../../Assets/Online/Runtime/PickupClaim.cs" Link="PickupClaim.cs" />
+    <Compile Include="../../Assets/Online/Tests/Editor/PickupClaimTests.cs" Link="PickupClaimTests.cs" />
+    <Compile Include="../../Assets/Online/Tests/Editor/CombatRulesTests.cs" Link="CombatRulesTests.cs" />
+    <Compile Include="../../Assets/Online/Tests/Editor/BombStockTests.cs" Link="BombStockTests.cs" />
+  </ItemGroup>
+</Project>

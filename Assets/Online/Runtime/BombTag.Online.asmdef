@@ -1,0 +1,13 @@
+{
+  "name": "BombTag.Online",
+  "references": [
+    "Unity.Netcode.Runtime",
+    "Unity.Services.Core",
+    "Unity.Services.Authentication",
+    "Unity.Services.Multiplayer",
+    "Unity.Networking.Transport",
+    "Unity.AI.Navigation"
+  ],
+  "includePlatforms": [],
+  "autoReferenced": true
+}

@@ -271,6 +271,8 @@ GameObject:
   - component: {fileID: 244318401}
   - component: {fileID: 244318400}
   - component: {fileID: 244318404}
+  - component: {fileID: 244318405}
+  - component: {fileID: 244318406}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -1478,6 +1480,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2063576076}
   - component: {fileID: 2063576075}
+  - component: {fileID: 2063576077}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -1497,6 +1500,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5c71d0fdc3d8fa549a3756e610acf671, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameManager
+  resultText: {fileID: 46609506}
+  retryButton: {fileID: 247149866}
 --- !u!4 &2063576076
 Transform:
   m_ObjectHideFlags: 0
@@ -1525,3 +1530,50 @@ SceneRoots:
   - {fileID: 1291069443}
   - {fileID: 2063576076}
   - {fileID: 1775340375}
+
+--- !u!114 &244318405
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 244318398}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f36fb7a8a9e14ce69124f963850c6afb, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::BombInventory
+
+--- !u!114 &2063576077
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2063576074}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9827d15b0d364acfa06e7694bcc210fc, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::BombSupplySetup
+  playerInventory: {fileID: 244318405}
+  pickupPrefab: {fileID: 300682790085870580, guid: 92fa082cc77245d5806d28b8ce757273, type: 3}
+  pickupPositions:
+  - {x: -3, y: 0.5, z: 0}
+  - {x: 0, y: 0.5, z: 3}
+  - {x: 3, y: 0.5, z: 0}
+  - {x: 0, y: 0.5, z: -3}
+
+--- !u!114 &244318406
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 244318398}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0c36d67ccfc45069c48461cb37ffde7, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerHealth
+  invulnerabilitySeconds: 1
